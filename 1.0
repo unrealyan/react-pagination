@@ -2,7 +2,6 @@
  * Created by unrealyan on 16/8/11.
  */
 import React, {Component, PropTypes} from "react";
-var pageSum = 0;
 class Pagination extends Component {
     constructor(props) {
         super(props);
@@ -10,28 +9,30 @@ class Pagination extends Component {
             currentPage: 0,
             setPageSize: 5,
             pageSize: 5,
-            initialNo: 0
+            initialNo: 0,
+            pageCount: this.props.pageCount ? parseInt(this.props.pageCount % 5) == 0 ? parseInt(this.props.pageCount / 5) : parseInt(this.props.pageCount / 5) + 1 : 0
         }
     }
 
 
     componentWillReceiveProps(nextProps) {
-        if (nextProps.pageCount != undefined) {
+        if (nextProps.pageCount) {
             this.setState({
-                pageCount: parseInt(nextProps.pageCount / this.state.pageSize) + 1
+                pageCount: parseInt(nextProps.pageCount % this.state.pageSize) == 0 ?
+                    parseInt(nextProps.pageCount / this.state.pageSize) : parseInt(nextProps.pageCount / this.state.pageSize) + 1
             })
         }
+
 
     }
 
     onClick(e) {
         const {queryFunc}=this.props;
         let currentPage = parseInt(e.target.name);
-        // if(currentPage!=1&&currentPage!=this.state.pageCount){
         this.setState({currentPage: currentPage + 1}, function () {
             queryFunc(this.state.pageSize, this.state.currentPage);
+            this.refs.jumpPage.value = this.state.currentPage;
         });
-        // }
 
     }
 
@@ -41,6 +42,7 @@ class Pagination extends Component {
             let nextPage = this.state.currentPage - 1;
             this.setState({currentPage: nextPage}, function () {
                 queryFunc(this.state.pageSize, this.state.currentPage);
+                this.refs.jumpPage.value = this.state.currentPage;
             });
         }
     }
@@ -51,15 +53,14 @@ class Pagination extends Component {
             let nextPage = this.state.currentPage + 1;
             this.setState({currentPage: nextPage}, function () {
                 queryFunc(this.state.pageSize, this.state.currentPage);
+                this.refs.jumpPage.value = this.state.currentPage;
             });
         }
     }
-    onChange(e){
-        const {queryFunc}=this.props;
+
+    onChange() {
         this.setState({
-            currentPage: e.target.value
-        }, function () {
-            queryFunc(this.state.pageSize, this.state.currentPage);
+            currentPage: this.state.currentPage
         });
     }
 
@@ -67,16 +68,28 @@ class Pagination extends Component {
         const {queryFunc}=this.props;
         this.setState({
             currentPage: 1,
-            pageSize: e.target.value
+            pageSize: parseInt(e.target.value)
         }, function () {
             queryFunc(this.state.pageSize, this.state.currentPage);
+            this.refs.jumpPage.value = this.state.currentPage;
         });
     }
 
-    render(){
-        let items=[];
+    jump() {
+        const {queryFunc}=this.props;
+        this.setState({
+            currentPage: parseInt(this.refs.jumpPage.value)
+        }, function () {
+            queryFunc(this.state.pageSize, this.state.currentPage);
+            this.refs.jumpPage.value = this.state.currentPage;
+        });
 
-        for(let i=0;i<this.state.pageCount;i++){
+    }
+
+    render() {
+        let items = [];
+
+        for (let i = 0; i < this.state.pageCount; i++) {
             items.push(i)
         }
 
@@ -84,30 +97,35 @@ class Pagination extends Component {
             <nav>
                 <ul className="pagination">
                     <li className={this.state.currentPage<=1?"disabled":""} style={{cursor: 'pointer '}}>
-                        <a onClick={this.upPage.bind(this)} aria-label="Previous"><span aria-hidden="true">上一页</span></a></li>
-                    {items.map((value,key)=>{
-                        if((key+1)<5){
+                        <a onClick={this.upPage.bind(this)} aria-label="Previous"><span
+                            aria-hidden="true">上一页</span></a></li>
+                    {items.map((value, key)=> {
+                        if ((key + 1) < 5) {
                             return (
-                                <li className={this.state.currentPage==(key+1)?"active":""} style={{cursor: 'pointer '}}>
-                                    <a name={value} onClick={this.onClick.bind(this)}>{value+1} <span className="sr-only">(current)</span>
+                                <li key={key} className={this.state.currentPage==(key+1)?"active":""}
+                                    style={{cursor: 'pointer '}}>
+                                    <a name={value} onClick={this.onClick.bind(this)}>{value + 1} <span
+                                        className="sr-only">(current)</span>
                                     </a>
                                 </li>
                             )
-                        }else if((key+1)>5&&(key+1)<(this.state.pageCount-1)){
-                            return(
+                        } else if ((key + 1) > 5 && (key + 1) < (this.state.pageCount - 1)) {
+                            return (
                                 ""
                             )
-                        }else if((key+1)==(this.state.pageCount-1)){
-                            return(
-                                <li className="disabled" style={{cursor: 'default'}}>
+                        } else if ((key + 1) == (this.state.pageCount - 1)) {
+                            return (
+                                <li key={key} className="disabled" style={{cursor: 'default'}}>
                                     <a name={value} onClick={this.onClick.bind(this)}>...<span className="sr-only">(current)</span>
                                     </a>
                                 </li>
                             )
-                        }else if((key+1)==this.state.pageCount){
-                            return(
-                                <li className={this.state.currentPage==(key+1)?"active":""} style={{cursor: 'pointer '}}>
-                                    <a name={value} onClick={this.onClick.bind(this)}>{this.state.pageCount}<span className="sr-only">(current)</span>
+                        } else if ((key + 1) == this.state.pageCount) {
+                            return (
+                                <li key={key} className={this.state.currentPage==(key+1)?"active":""}
+                                    style={{cursor: 'pointer '}}>
+                                    <a name={value} onClick={this.onClick.bind(this)}>{this.state.pageCount}<span
+                                        className="sr-only">(current)</span>
                                     </a>
                                 </li>
                             )
@@ -116,8 +134,12 @@ class Pagination extends Component {
                     })}
                     <li style={{cursor: 'default'}}>
                         <a>跳转至
-                            <input onChange={this.onChange.bind(this)} type="text"style={{height:"auto",fontSize:"12px",padding:"auto",lineHeight:"12px",width:"25px"}}/>页
+                            <input ref="jumpPage"
+                                   onKeyUp={(e)=>{e.target.value=e.target.value.replace(/[^\d]/g,'')>this.state.pageCount?this.state.pageCount:e.target.value.replace(/[^\d]/g,'')}}
+                                   onChange={this.onChange.bind(this)} type="text"
+                                   style={{height:"auto",fontSize:"12px",padding:"auto",lineHeight:"12px",width:"35px"}}/>页
                         </a>
+                        <span onClick={this.jump.bind(this)} style={{cursor: 'pointer '}}>跳转</span>
                     </li>
                     <li style={{cursor: 'default'}}>
                         <a>每页显示
@@ -129,7 +151,8 @@ class Pagination extends Component {
                             </select>条
                         </a>
                     </li>
-                    <li className={this.state.currentPage>=this.state.pageCount?"disabled":""} style={{cursor: 'pointer '}}>
+                    <li className={this.state.currentPage>=this.state.pageCount?"disabled":""}
+                        style={{cursor: 'pointer '}}>
                         <a onClick={this.nextPage.bind(this)} aria-label="Previous"><span aria-hidden="true">下一页</span></a>
                     </li>
                 </ul>
@@ -138,12 +161,11 @@ class Pagination extends Component {
     }
 }
 Pagination.propTypes = {
-    pageSize: PropTypes.number.isRequired,
-    pageCount: PropTypes.number.isRequired,
+    pageSize: PropTypes.number,
+    pageCount: PropTypes.number,
     queryFunc: PropTypes.func.isRequired,
-    currentPage: PropTypes.number.isRequired
+    currentPage: PropTypes.number
 };
-Pagination.defaultProps = {};
 
 
 export default Pagination;
